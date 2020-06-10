@@ -1944,6 +1944,8 @@ def take_turn():
                 if enemy_cooldowns[a] > 0:
                     enemy_cooldowns[a] -= 1
             turn += 1
+        else:
+            play_again()
 
 def rules():
     global cooldowns
@@ -1952,6 +1954,7 @@ def rules():
     global hidden
     global detected
     global mine
+    global debug
     print("-------------------------")
     print("   Rules               /")
     print("-----------------------")
@@ -1972,11 +1975,126 @@ def rules():
     print(" Detected enemy ships will appear as " + detected)
     print(" Your hidden ships will appear as " + hidden)
     print(" Remember: Ships can move, so you may want to consider targeting areas that were previously misses")
+    print("")
+    response = input(" *** Press Enter to Start *** ")
+    if response.lower() == "pumpkineater":
+        if debug == True:
+            debug = False
+        else:
+            debug = True
 
 def version():
     print("-----------------------------------------------------------------------------------------------------------------------")
-    print("                                        Battleship 2 - Code by Daniel Navarro                                 ver: 1.00")
+    print("                                        Battleship 2 - Code by Daniel Navarro                                 ver: 1.10")
     print("-----------------------------------------------------------------------------------------------------------------------")
+
+def reset_game():
+    #Game Vars
+    global game_over
+    global game
+    global turn
+    #Player Vars
+    global player_ships_alive
+    global player_board
+    global player_guesses
+    global player_ships
+    global player_mines
+    global player_cooldowns
+    global player_pb_radar
+    global player_sub_radar
+    global player_promoted
+    #Enemy Vars
+    global enemy_ships_alive
+    global enemy_board
+    global enemy_guesses
+    global enemy_ships
+    global enemy_mines
+    global enemy_cooldowns
+    global enemy_pb_radar
+    global enemy_sub_radar
+    global enemy_promoted
+    #Grid Vars
+    global nums
+    global A
+    global B
+    global C
+    global D
+    global E
+    global F
+    global G
+    global H
+    global I
+    global J
+    global num_rows
+
+    game_over = False
+    game += 1
+    turn = 1
+
+    nums = ["   "]
+    A=["A "]
+    B=["B "]
+    C=["C "]
+    D=["D "]
+    E=["E "]
+    F=["F "]
+    G=["G "]
+    H=["H "]
+    I=["I "]
+    J=["J "]
+    num_rows = [A, B, C, D, E, F, G, H, I, J]
+    hits = []
+    misses = []
+    hide = []
+    sunken = []
+    bloops = []
+    mine_list = []
+
+    player_ships_alive = 5
+    player_board =[]
+    player_guesses = []
+    player_ships = ["player"]
+    player_mines = []
+    player_pb_radar = []
+    player_sub_radar = []
+    player_cooldowns = [0, 0, 0, 0, 0, 0]#PB, Destroyer, Sub, Battleship, AC, Battleship2
+    player_promoted = False
+
+    enemy_ships_alive = 5
+    enemy_board = []
+    enemy_guesses = []
+    enemy_ships = ["enemy"]
+    enemy_mines = []
+    enemy_pb_radar = []
+    enemy_sub_radar = []
+    enemy_cooldowns = [0, 0, 0, 0, 0, 0]#PB, Destroyer, Sub, Battleship, AC, Battleship2
+    enemy_promoted = False
+
+    set_up()
+
+def play_again():
+    loop = True
+    while loop == True:
+        response = input("Play again? (Yes/No) ")
+        if (response.lower()) == "yes":
+            loop2 = True
+            while loop2 == True:
+                response = input("Review rules? (Yes/No) ")
+                if response.lower() == "yes":
+                    rules()
+                    reset_game()
+                    loop2 = False
+                elif response.lower() == "no":
+                    reset_game()
+                    loop2 = False
+                else:
+                    print("Invalid response")
+            loop = False
+        elif (response.lower()) == "no":
+            print("Thanks for playing!")
+            loop = False
+        else:
+            print("Invalid response")
 
 version()
 rules()
