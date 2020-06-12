@@ -72,14 +72,24 @@ enemy_cooldowns = [0, 0, 0, 0, 0, 0]#PB, Destroyer, Sub, Battleship, AC, Battles
 enemy_promoted = False
 
 def cheat(current_player):
+    global enemy_mines
+    global player_mines
+    global player_promoted
+    global enemy_promoted
     promoted = False
     list_len = 0
+    mine_list = 0
+    mine_location = ""
     if current_player[0] == "player":
         print("Player Ship Locations: ")
         promoted = player_promoted
+        mine_list = len(player_mines)
+        mine_location += "Player Mine Locations: "
     else:
         print("Enemy Ship Locations: ")
         promoted = enemy_promoted
+        mine_list = len(enemy_mines)
+        mine_location += "Enemy Mine Locations: "
     if promoted == True:
         list_len = len(current_player)
     else:
@@ -94,6 +104,20 @@ def cheat(current_player):
             if b < len(current_player[a]) - 1:
                 ship += ", "
         print(ship)
+    if mine_list > 0:
+        if current_player[0] == "player":
+            for d in range(0, len(player_mines)):
+                location = (str(convert_y_axis(player_mines[d][0])) + str(player_mines[d][1]))
+                if d < len(player_mines) -1:
+                    location += ", "
+                mine_location += location
+        else:
+            for d in range(0, len(enemy_mines)):
+                location = (str(convert_y_axis(enemy_mines[d][0])) + str(enemy_mines[d][1]))
+                if d < len(enemy_mines) -1:
+                    location += ", "
+                mine_location += location
+        print(mine_location)
 
 def set_up():
     global num_rows
@@ -401,6 +425,10 @@ def deploy_sub(current_player): #Player ships
         check_mine_collision(current_player, player_mines)
 
 def drop_mine(current_player, mine_list): #current player's ship list, current player's mine list
+    global enemy_mines
+    global player_mines
+    global enemy_pb_radar
+    global player_pb_radar
     if current_player[0] == "player":
         radar(1, player_ships, player_pb_radar, enemy_ships, False)
         loop1 = True
@@ -478,10 +506,11 @@ def drop_mine(current_player, mine_list): #current player's ship list, current p
                 dupe = False
                 radar_point = []
                 randomizer = random.randint(0, len(enemy_pb_radar) -1)
-                for b in range(0, len(enemy_mines)):
-                    radar_point = [enemy_pb_radar[randomizer][0], enemy_pb_radar[randomizer][1]]
-                    if radar_point == enemy_mines[b]:
-                        dupe = True
+                radar_point = [enemy_pb_radar[randomizer][0], enemy_pb_radar[randomizer][1]]
+                if len(enemy_mines) > 0:
+                    for b in range(0, len(enemy_mines)):
+                        if radar_point == enemy_mines[b]:
+                            dupe = True
                 if dupe == False:
                     enemy_mines.append(radar_point)
                     loop = False
@@ -1008,15 +1037,45 @@ def enemy_attack(): #Num, ship list, cooldown list, player ships, enemy guesses
             check_guess(4, attack, enemy_ships, enemy_guesses, player_ships)
         elif available_ships[attack_with] == "aircraft carrier":
             ship = 5
-            barrage = []
-            shots_left = 5
+            barrage = [fire_at]
+            shots_left = 4
             while shots_left > 0:
-                X = random.randint(1,grid_size)
-                Y = random.randint(1,grid_size)
-                location = [Y, X]
-                if location not in barrage:
-                    barrage.append(location)
-                    shots_left -= 1
+                more_hits = False
+                if len(known_hits) > len(barrage):
+                    more_hits = True
+                if more_hits == True: #More than one location to shoot at
+                    for a in range(0, len(known_hits)):
+                        if known_hits[a] not in barrage:
+                            aim_at = [known_hits[a][0], known_hits[a][1]]
+                            detected_ship = False
+                            for c in range(0, len(enemy_sub_radar)):
+                                check_status = [enemy_sub_radar[c][0], enemy_sub_radar[c][1]]
+                                if aim_at == check_status:
+                                    if enemy_sub_radar[c][-1] == "detected":
+                                        fire_at = aim_at
+                                        detected_ship = True
+                            if detected_ship == False:
+                                compass = random.randint(0, 3)
+                                if compass == 0 and aim_at[0] +1 <= grid_size: #North Y+1
+                                    fire_at = [aim_at[0] +1, aim_at[1]]
+                                elif compass == 1 and aim_at[0] -1 >= 1: #South
+                                    fire_at = [aim_at[0] -1, aim_at[1]]
+                                elif compass == 2 and aim_at[1] -1 >= 1: #West
+                                    fire_at = [aim_at[0], aim_at[1] -1]
+                                elif compass == 3 and aim_at[1] +1 <= grid_size: #east
+                                    fire_at = [aim_at[0], aim_at[1] +1]
+                                else:
+                                    fire_at = known_hits[0]
+                            if fire_at not in barrage:
+                                barrage.append(fire_at)
+                                shots_left -= 1
+                else:
+                    X = random.randint(1,grid_size)
+                    Y = random.randint(1,grid_size)
+                    location = [Y, X]
+                    if location not in barrage:
+                        barrage.append(location)
+                        shots_left -= 1
             attack_location = ""
             for e in range(0, len(barrage)):
                 attack_location += (str(convert_y_axis(barrage[e][0])) + str(barrage[e][1]))
@@ -1884,10 +1943,11 @@ def promote(current_player):
                 for e in range(2, len(current_player[6])):
                     current_player[6][e][0] = locations[e-2][0]
                     current_player[6][e][1] = locations[e-2][1]
-                    current_player[6][e].append("blank")
+                    if debug != True:
+                        current_player[6][e].append("blank")
+                    else:
+                        current_player[6][e].append("hidden")
                 loop = False
-    #Debug
-    print(str(current_player))
 
 def take_turn():
     global player_ships
@@ -1985,7 +2045,7 @@ def rules():
 
 def version():
     print("-----------------------------------------------------------------------------------------------------------------------")
-    print("                                        Battleship 2 - Code by Daniel Navarro                                 ver: 1.10")
+    print("                                        Battleship 2 - Code by Daniel Navarro                                 ver: 1.20")
     print("-----------------------------------------------------------------------------------------------------------------------")
 
 def reset_game():
@@ -2096,6 +2156,10 @@ def play_again():
         else:
             print("Invalid response")
 
+def set_window_size():
+    os.system('mode con: cols=120 lines=40')
+
+#set_window_size()
 version()
 rules()
 set_up()
